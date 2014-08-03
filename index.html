@@ -1,1 +1,162 @@
-Hello
+<!DOCTYPE html>
+
+<head>
+   <meta charset="utf-8">
+   <title>HITBG VOTE</title>
+
+   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+   <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
+
+   <style>
+   #sortable { list-style-type: none; margin: 0; padding: 0; width: 60%; }
+   #sortable li { border-style: dotted; border-width: thin; }
+   #sortable li span { position: absolute; margin-left: -1.3em; }
+   </style>
+
+   <script type="text/javascript">
+   var allSongs=[];
+   var selectCounter = 0;
+   var selectedSongs={};
+   var REQUIRED = 10;
+
+   DESCRIPTION_1 = "Шаг первый - выбираем как минимум 10 песен из списка. Можно выбрать больше и определиться окончательно уже на следующей странице. Меньше выбрать нельзя. Как только хотя бы 10 песен будут выбраны, внизу страницы появится кнопочка перехода на следующий шаг.";
+   DESCRIPTION_2 = "Шаг второй - расставляем песни по местам. Двигаем мышкой. Удовлетворившись результатом, копируем топ-10 из текстбокса внизу страницы и отсылаем свой голос в личку Создателю";
+
+   function loadData() {
+
+      var ret = ["fake"];
+
+      $.ajax({
+	  url: "./list.txt",
+	  async: false,
+	  timeout: 1000,
+	  dataType: "text",
+	  success: function(data){
+             //alert(data);
+	     ret = [];
+	     lines = data.trim().split("\n");
+	     for (var i = 0; i < lines.length; ++i) {
+		line = lines[i];
+		split = line.trim().split(/\s+/);
+		id = split[0];
+		song = line.trim().substring(id.length).trim();
+		ret.push({id: id, song: song});
+             }
+	  },
+	  error: function(jqxhr, status, exception) {
+             //alert(exception);
+	  }
+      });
+
+      return ret;
+
+   }
+
+   function printData() {
+      var data = loadData();
+      //$("#id").text(data.length + ": " + data.join());
+      $("#id").text(data.length + ": " + data[0].song);
+   }
+
+   $(document).ready(startFromScratch);
+
+   function startFromScratch() {
+      $("#description").text(DESCRIPTION_1);
+      $("#phase1").empty();
+      $("#continue").hide();
+      $("#phase2").empty();
+      $("#output").hide();
+      $("#outputarea").val("");
+      selectCounter = 0;
+      selectedSongs = {};
+
+      data = loadData();
+      list = $('<ul>');
+      $("#phase1").prepend(list);
+      $.each(data, function(i) {
+	 entry = $('<li />').append('<input type="checkbox" id="' + data[i].id + '"/> ' + data[i].song + '<br />');
+	 list.append(entry);      
+      });
+      $('input:checkbox').click(function(event) {
+	 if (this.checked) {
+	    selectCounter++;
+	    //$("#checkboxdebug").text(selectCounter+this.id);
+	    if (selectCounter >= REQUIRED) {
+               $("#continue").show();
+	    }
+	    selectedSongs[this.id]=data[this.id-1].song;
+	 } else {
+	    selectCounter--;
+	    //$("#checkboxdebug").text(selectCounter);
+	    if (selectCounter < REQUIRED) {
+               $("#continue").hide();
+	    }
+	    delete selectedSongs[this.id];
+	 }
+      });
+   }
+
+   function startPhase2(data) {
+      $("#description").text(DESCRIPTION_2);
+      $("#phase1").empty();
+      $("#continue").hide();
+      $("#phase2").show();
+      $("#output").show();
+
+      list = $('<ul>').attr('id','sortable');
+      $("#phase2").prepend(list);
+      j = 0;
+      $.each(data, function(i) {
+	 entry = '<li  id="check_' + i + '"> ' + data[i] + '</li>';
+	 list.append(entry);      
+      });
+      $( "#sortable" ).sortable({
+         update: function(event, ui) {
+            serial = $("#sortable").sortable('serialize');
+	    //$("#checkboxdebug").text(serial);
+	    entries = serial.split("&");
+	    result="";
+	    for (var i = 0; i < entries.length; ++i) {
+	       id = entries[i].split("check[]=")[1];
+	       song = data[id];
+	       position = i+1;
+	       result += (position + ") " + song + "\n");
+            }
+	    $("#outputarea").val(result);
+         }
+      });
+      $( "#sortable" ).disableSelection();
+   }
+
+   </script>  
+</head>
+
+
+
+<body>
+   <div id="scratch">
+   <input type='button' value='Начать сначала' onClick='startFromScratch();'></input>
+   </div>
+   
+   <div id="intro">
+   <p>Здесь можно проголосовать. Это можно сделать за 2 простых шага.<br />
+   <p id="description"></p>
+   <p>Если что-то перепутали или сломали - нажимаем на спасительную кнопку в самом верху страницы и начинаем все сначала.</p>
+   </div>
+   
+   <!--<div id="checkboxdebug">chbdebug</div>-->
+
+   <div id="phase1"></div>
+
+   <div id="continue">
+   <input type='button' value='Расставить по местам...' onClick='startPhase2(selectedSongs);'></input>
+   </div>
+
+   <div id="phase2"></div>
+   <br />
+   <div id="output">
+   <textarea id="outputarea" style="width: 70%; height: 300px;">
+   </textarea>
+   </div>
+
+</body>
