@@ -1,164 +1,163 @@
 <!DOCTYPE html>
-
+<html lang="en">
 <head>
-   <meta charset="utf-8">
-   <title>HITBG VOTE</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Bootstrap 101 Template</title>
 
-   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-   <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
-   <script src="jquery.ui.touch-punch.min.js"></script>
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
 
-   <style>
-   #sortable { list-style-type: none; margin: 0; padding: 0; width: 60%; }
-   #sortable li { border-style: dotted; border-width: thin; }
-   #sortable li span { position: absolute; margin-left: -1.3em; }
-   </style>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
 
-   <script type="text/javascript">
-   var allSongs=[];
-   var selectCounter = 0;
-   var selectedSongs={};
-   var REQUIRED = 10;
+    <script src="js/jquery-1.11.3.min.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.min.js"></script>
 
-   function loadData() {
+    <script>
+        var data = loadData();
 
-      var ret = ["fake"];
+        function loadData() {
+            return {
+                1: 'Song 1',
+                2: 'Blur - Song 2',
+                3: 'Song 3',
+                4: 'Song 4',
+                5: 'Song 5'
+            };
+        }
 
-      $.ajax({
-	  url: "./list.txt",
-	  async: false,
-	  timeout: 1000,
-	  dataType: "text",
-	  success: function(data){
-             //alert(data);
-	     ret = [];
-	     lines = data.trim().split("\n");
-	     for (var i = 0; i < lines.length; ++i) {
-		line = lines[i];
-		split = line.trim().split(/\s+/);
-		id = split[0];
-		song = line.trim().substring(id.length).trim();
-		ret.push({id: id, song: song});
-             }
-	  },
-	  error: function(jqxhr, status, exception) {
-             //alert(exception);
-	  }
-      });
+        function loadData() {
+            var ret = ["ERROR"];
+            $.ajax({
+                url: "./list.txt",
+                async: false,
+                timeout: 1000,
+                dataType: "text",
+                success: function(data){
+                    ret = {};
+                    lines = data.trim().split("\n");
+                    for (var i = 0; i < lines.length; ++i) {
+                        line = lines[i];
+                        song = line.trim();
+                        ret[i+1] = song;
+                    }
+                },
+                error: function(jqxhr, status, exception) {
+                    alert(exception);
+                }
+            });
+            return ret;
+        }
 
-      return ret;
-
-   }
-
-   function printData() {
-      var data = loadData();
-      //$("#id").text(data.length + ": " + data.join());
-      $("#id").text(data.length + ": " + data[0].song);
-   }
-
-   $(document).ready(startFromScratch);
-
-   function startFromScratch() {
-      $("#phase1").empty();
-      $("#continue").hide();
-      $("#phase2").empty();
-      $("#output").hide();
-      $("#outputarea").val("");
-      $("#description1").show();
-      $("#description2").hide();
-      selectCounter = 0;
-      selectedSongs = {};
-
-      data = loadData();
-      list = $('<ul>');
-      $("#phase1").prepend(list);
-      $.each(data, function(i) {
-	 entry = $('<li />').append('<input type="checkbox" id="' + data[i].id + '"/> ' + data[i].song + '<br />');
-	 list.append(entry);      
-      });
-      $('input:checkbox').click(function(event) {
-	 if (this.checked) {
-	    selectCounter++;
-	    //$("#checkboxdebug").text(selectCounter+this.id);
-	    if (selectCounter >= REQUIRED) {
-               $("#continue").show();
-	    }
-	    selectedSongs[this.id]=data[this.id-1].song;
-	 } else {
-	    selectCounter--;
-	    //$("#checkboxdebug").text(selectCounter);
-	    if (selectCounter < REQUIRED) {
-               $("#continue").hide();
-	    }
-	    delete selectedSongs[this.id];
-	 }
-      });
-   }
-
-   function startPhase2(data) {
-      $("#phase1").empty();
-      $("#continue").hide();
-      $("#phase2").show();
-      $("#output").show();
-      $("#description1").hide();
-      $("#description2").show();
-
-      list = $('<ul>').attr('id','sortable');
-      $("#phase2").prepend(list);
-      j = 0;
-      $.each(data, function(i) {
-	 entry = '<li  id="check_' + i + '"> ' + data[i] + '</li>';
-	 list.append(entry);      
-      });
-      $( "#sortable" ).sortable({
-         update: function(event, ui) {
-            serial = $("#sortable").sortable('serialize');
-	    //$("#checkboxdebug").text(serial);
-	    entries = serial.split("&");
-	    result="";
-	    for (var i = 0; i < entries.length; ++i) {
-	       id = entries[i].split("check[]=")[1];
-	       song = data[id];
-	       position = i+1;
-	       result += (position + ") " + song + "\n");
+        function sortableUpdate(event, ui) {
+            $("#selected").sortable('refresh');
+            entries = $("#selected").sortable('toArray');
+            result="";
+            for (var i = 0; i < entries.length; ++i) {
+                id = entries[i].split("song_")[1];
+                song = data[id];
+                position = i+1;
+                result += (position + ") " + song + "\n");
+                if (i == 9) {
+                    result += "\n";
+                }
             }
-	    $("#outputarea").val(result);
-         }
-      });
-      $( "#sortable" ).disableSelection();
-   }
+            $("#out").val(result);
+        };
 
-   </script>  
+        function select() {
+            var $this = $(this);
+            $this.switchClass("list-group-item-warning", "list-group-item-success");
+            $this.switchClass("unsli", "sli");
+            $("#selected").append($this);
+            $("#selected").sortable('refresh');
+            $this.click(unselect);
+            sortableUpdate(null,null);
+        }
+
+        function unselect() {
+            var $this = $(this);
+            $this.switchClass("list-group-item-success", "list-group-item-warning");
+            $this.switchClass("sli", "unsli");
+            $("#unselected").prepend($this);
+            $("#selected").sortable('refresh');
+            $this.click(select);
+            sortableUpdate(null,null);
+        }
+
+        function start() {
+
+            for (var i in data) {
+                var song = data[i];
+                var li = $("<li/>")
+                        .attr("id", "song_"+i)
+                        .addClass("list-group-item")
+                        .addClass("list-group-item-warning")
+                        .addClass("unsli")
+                        .text(song);
+                $("#unselected").append(li);
+//                /li.appendTo($("#unselected"))
+            }
+
+            $(".unsli").click(select);
+            $(".sli").click(unselect);
+
+            $( "#selected" ).sortable({
+                update: sortableUpdate
+            });
+            $( "#selected" ).disableSelection();
+        };
+
+        $(document).ready(start);
+    </script>
+
 </head>
 
-
-
 <body>
-   <div id="scratch">
-   <input type='button' value='Начать сначала' onClick='startFromScratch();'></input>
-   </div>
-   
-   <div id="intro">
-   <p>Голосовалка для группы <a href="http://vk.com/hitbg">Хит Большого Города</a>.</p>
-   <p>Проголосовать можно за 2 простых шага.<br />
-   <div id="description1">Шаг первый - выбираем как минимум 10 песен из списка. Можно выбрать больше и определиться окончательно уже на следующей странице. Меньше выбрать нельзя. Как только хотя бы 10 песен будут выбраны, внизу страницы появится кнопочка перехода на следующий шаг.</div>
-   <div id="description2">Шаг второй - расставляем песни по местам. Двигаем мышкой. Удовлетворившись результатом, копируем топ-10 из текстбокса внизу страницы и отсылаем свой голос в личку Архитектору, сюда - <a href="http://vk.com/kukareks">http://vk.com/kukareks</a></div>
-   <p>Если что-то перепутали или сломали - нажимаем на спасительную кнопку в самом верху страницы и начинаем все сначала.</p>
-   </div>
-   
-   <!--<div id="checkboxdebug">chbdebug</div>-->
 
-   <div id="phase1"></div>
+<div class="container">
+    <div class="page-header">
+        <h1>Хит Большого Города <small>голосовалка</small></h1>
+    </div>
+    <div class="row">
 
-   <div id="continue">
-   <input type='button' value='Расставить по местам...' onClick='startPhase2(selectedSongs);'></input>
-   </div>
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">1. Нажимай чтобы взять</div>
+                <ul id="unselected" class="list-group">
+                </ul>
+            </div>
+        </div>
 
-   <div id="phase2"></div>
-   <br />
-   <div id="output">
-   <textarea id="outputarea" style="width: 70%; height: 300px;">
-   </textarea>
-   </div>
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">2. Двигай чтобы сортировать, нажимай чтобы убрать</div>
+                <ul id="selected" class="list-group">
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">3. Смотри результат</div>
+                <textarea id="out" class="form-control" rows="15"></textarea>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading">4. Копируй десятку и отсылай Архитектору - <a href="http://vk.com/kukareks">http://vk.com/kukareks</a></div>
+            </div>
+        </div>
+
+    </div>
+</div>
 
 </body>
+</html>
