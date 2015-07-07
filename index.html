@@ -113,7 +113,8 @@
             $(".sli").click(unselect);
 
             $( "#selected" ).sortable({
-                update: sortableUpdate
+                update: sortableUpdate,
+                helper: 'clone'
             });
             $( "#selected" ).disableSelection();
         };
