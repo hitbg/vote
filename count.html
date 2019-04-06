@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Подсчет голосов</title>
+
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/file-input.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <script src="js/jquery-1.11.3.min.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
+    <script src="js/jquery.ui.touch-punch.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.min.js"></script>
+	
+	<script>
+	function getNumOfPoints(str) {
+		var res = 0; 
+		var maxPoint = 10;
+		var song = '';
+		isSongPos = str.indexOf(")");
+		if (isSongPos > -1) {
+			var str_mas = str.split(')');
+			var positionNum = Number(str_mas[0]);
+			song = str_mas[1];
+			if (Number.isInteger(positionNum)){
+				if (positionNum >= 1 && positionNum <= maxPoint) {
+					res = maxPoint - positionNum + 1;
+				}
+			}
+		}
+		return [song,res];
+	}
+	
+	function readFile() {
+	   var selectedFile = document.getElementById('inputFile').files[0];
+	   var reader = new FileReader();
+	   reader.onload = function (e) {
+		 var FileContent = e.target.result;
+		 parseContent(FileContent);
+	   };
+	   reader.readAsText(selectedFile, 'CP1251');
+	 }
+
+	function parseContent(content) {
+		var strings = content.split("\n");
+		var resMap = new Map()
+		for (var i in strings) {
+			var res = getNumOfPoints(strings[i]);
+			song = res[0].trim();
+			points = res[1];
+				
+			if (points !== 0) {
+				if (resMap.has(song)){
+					resMap.set(song, resMap.get(song) + points);
+				} else {
+					resMap.set(song, points);
+				}
+			}
+		}
+		
+		resMap[Symbol.iterator] = function* () {
+			yield* [...this.entries()].sort((a, b) => b[1] - a[1]);
+		}
+		var i=0;
+		for (let [key, value] of resMap){
+			i += 1;
+			document.getElementById('out').innerHTML += i + ') ' + key + ' ' + value + '\n';
+		}
+	 }
+
+	</script>
+
+</head>
+
+<body>
+<div class="container">
+	<div class="row">
+		<div class="col-md-4">
+			<div class="panel panel-default">
+				<div class="panel-heading">Файл с бюллетенями</div>
+				<span class="btn btn-default btn-file btn-block btn-primary">  <!--btn-primary-->
+					Выбрать файл...<input type="file" id="inputFile" name="files[]" onchange="readFile()"/>
+				</span>
+			</div>
+		</div>
+		<div class="col-md-4">
+			<div class="panel panel-default">
+				<div class="panel-heading">Результаты</div>
+				<textarea id="out" class="form-control" rows="50"></textarea>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</html>
